@@ -1,6 +1,5 @@
 package com.multiplication.social.gamification.service.impl;
 
-import com.multiplication.social.gamification.domain.Badge;
 import com.multiplication.social.gamification.domain.GameStats;
 import com.multiplication.social.gamification.domain.ScoreCard;
 import com.multiplication.social.gamification.repository.BadgeCardRepository;
@@ -10,6 +9,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static com.multiplication.social.gamification.domain.Badge.FIRST_WIN;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +28,7 @@ public class GameServiceImplTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        gameService = new GameServiceImpl();
+        gameService = new GameServiceImpl(scoreCardRepository, badgeCardRepository);
     }
 
     @Test
@@ -47,6 +47,6 @@ public class GameServiceImplTest {
 
         // then
         assertThat(expected.getScore()).isEqualTo(scoreCard.getScore());
-        assertThat(expected.getBadges()).containsOnly(Badge.FIRST_WIN);
+        assertThat(expected.getBadges()).containsOnly(FIRST_WIN);
     }
 }
