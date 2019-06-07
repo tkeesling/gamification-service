@@ -1,5 +1,7 @@
 package com.multiplication.social.gamification.service.impl;
 
+import com.multiplication.social.gamification.client.MultiplicationResultAttemptClient;
+import com.multiplication.social.gamification.client.dto.MultiplicationResultAttempt;
 import com.multiplication.social.gamification.domain.Badge;
 import com.multiplication.social.gamification.domain.BadgeCard;
 import com.multiplication.social.gamification.domain.GameStats;
@@ -30,10 +32,13 @@ public class GameServiceImplTest {
     @Mock
     private BadgeCardRepository badgeCardRepository;
 
+    @Mock
+    private MultiplicationResultAttemptClient attemptClient;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        gameService = new GameServiceImpl(scoreCardRepository, badgeCardRepository);
+        gameService = new GameServiceImpl(scoreCardRepository, badgeCardRepository, attemptClient);
     }
 
     @Test
@@ -46,6 +51,8 @@ public class GameServiceImplTest {
         given(scoreCardRepository.getTotalScoreForUser(userId)).willReturn(totalScore);
         given(scoreCardRepository.findByUserIdOrderByScoreTimestampDesc(userId)).willReturn(singletonList(scoreCard));
         given(badgeCardRepository.findByUserIdOrderByBadgeTimestampDesc(userId)).willReturn(emptyList());
+        MultiplicationResultAttempt attempt = new MultiplicationResultAttempt("tyler", 1, 10, 10, true);
+        given(attemptClient.retrieveMultiplicationResultAttemptbyId(attemptId)).willReturn(attempt);
 
         // when
         GameStats actual = gameService.newAttemptforUser(userId, attemptId, true);
@@ -65,6 +72,8 @@ public class GameServiceImplTest {
         given(scoreCardRepository.getTotalScoreForUser(userId)).willReturn(totalScore);
         given(scoreCardRepository.findByUserIdOrderByScoreTimestampDesc(userId)).willReturn(createNScoreCards(10, userId));
         given(badgeCardRepository.findByUserIdOrderByBadgeTimestampDesc(userId)).willReturn(singletonList(firstWinBadge));
+        MultiplicationResultAttempt attempt = new MultiplicationResultAttempt("tyler", 1, 10, 10, true);
+        given(attemptClient.retrieveMultiplicationResultAttemptbyId(attemptId)).willReturn(attempt);
 
         // when
         GameStats actual = gameService.newAttemptforUser(userId, attemptId, true);
@@ -72,12 +81,6 @@ public class GameServiceImplTest {
         // then
         assertThat(actual.getScore()).isEqualTo(ScoreCard.DEFAULT_SCORE);
         assertThat(actual.getBadges()).containsOnly(Badge.BRONZE_MULTIPLICATOR);
-    }
-
-    private List<ScoreCard> createNScoreCards(int n, Long userId) {
-        return IntStream.range(0, n)
-                .mapToObj(i -> new ScoreCard(userId, (long) i))
-                .collect(toList());
     }
 
     @Test
@@ -114,5 +117,32 @@ public class GameServiceImplTest {
         // then
         assertThat(actual.getScore()).isEqualTo(totalScore);
         assertThat(actual.getBadges()).containsOnly(Badge.GOLD_MULTIPLICATOR);
+    }
+
+    @Test
+    public void shouldGiveLuckyNumberBadgeWhenAnswerIs42() {
+        // given
+        Long userId = 1L;
+        Long attemptId = 2L;
+        int totalScore = 10;
+        BadgeCard firstWinBadge = new BadgeCard(userId, Badge.FIRST_WIN);
+        given(scoreCardRepository.getTotalScoreForUser(userId)).willReturn(totalScore);
+        given(scoreCardRepository.findByUserIdOrderByScoreTimestampDesc(userId)).willReturn(createNScoreCards(1, userId));
+        given(badgeCardRepository.findByUserIdOrderByBadgeTimestampDesc(userId)).willReturn(singletonList(firstWinBadge));
+        MultiplicationResultAttempt attempt = new MultiplicationResultAttempt("tyler", 42, 10, 420, true);
+        given(attemptClient.retrieveMultiplicationResultAttemptbyId(attemptId)).willReturn(attempt);
+
+        // when
+        GameStats actual = gameService.newAttemptforUser(userId, attemptId, true);
+
+        // then
+        assertThat(actual.getScore()).isEqualTo(ScoreCard.DEFAULT_SCORE);
+        assertThat(actual.getBadges()).containsOnly(Badge.LUCKY_NUMBER);
+    }
+
+    private List<ScoreCard> createNScoreCards(int n, Long userId) {
+        return IntStream.range(0, n)
+                .mapToObj(i -> new ScoreCard(userId, (long) i))
+                .collect(toList());
     }
 }

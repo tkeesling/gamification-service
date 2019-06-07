@@ -1,5 +1,7 @@
 package com.multiplication.social.gamification.service.impl;
 
+import com.multiplication.social.gamification.client.MultiplicationResultAttemptClient;
+import com.multiplication.social.gamification.client.dto.MultiplicationResultAttempt;
 import com.multiplication.social.gamification.domain.Badge;
 import com.multiplication.social.gamification.domain.BadgeCard;
 import com.multiplication.social.gamification.domain.GameStats;
@@ -15,23 +17,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.multiplication.social.gamification.domain.Badge.BRONZE_MULTIPLICATOR;
 import static com.multiplication.social.gamification.domain.Badge.FIRST_WIN;
-import static com.multiplication.social.gamification.domain.Badge.GOLD_MULTIPLICATOR;
-import static com.multiplication.social.gamification.domain.Badge.SILVER_MULTIPLICATOR;
 import static java.util.stream.Collectors.toList;
 
 @Service
 @Slf4j
 class GameServiceImpl implements GameService {
 
+    public static final int LUCKY_NUMBER = 42;
+
     private ScoreCardRepository scoreCardRepository;
     private BadgeCardRepository badgeCardRepository;
+    private MultiplicationResultAttemptClient attemptClient;
 
     @Autowired
-    public GameServiceImpl(final ScoreCardRepository scoreCardRepository, final BadgeCardRepository badgeCardRepository) {
+    public GameServiceImpl(final ScoreCardRepository scoreCardRepository, final BadgeCardRepository badgeCardRepository, final MultiplicationResultAttemptClient attemptClient) {
         this.scoreCardRepository = scoreCardRepository;
         this.badgeCardRepository = badgeCardRepository;
+        this.attemptClient = attemptClient;
     }
 
     @Override
@@ -42,7 +45,7 @@ class GameServiceImpl implements GameService {
 
             log.info("User with id {} scored {} points for attempt id {}", userId, scoreCard.getScore(), attemptId);
 
-            List<BadgeCard> badgeCards = processForBadges(userId);
+            List<BadgeCard> badgeCards = processForBadges(userId, attemptId);
 
             return new GameStats(userId, scoreCard.getScore(), badgeCards.stream().map(BadgeCard::getBadge).collect(toList()));
         }
@@ -61,7 +64,7 @@ class GameServiceImpl implements GameService {
     /**
      * Checks the total score and the different score cards obtained to give new badges in case their conditions are met.
      */
-    private List<BadgeCard> processForBadges(final Long userId) {
+    private List<BadgeCard> processForBadges(final Long userId, final Long attemptId) {
         List<BadgeCard> badgeCards = new ArrayList<>();
 
         int totalScore = scoreCardRepository.getTotalScoreForUser(userId);
@@ -72,14 +75,23 @@ class GameServiceImpl implements GameService {
         List<BadgeCard> badgeCardList = badgeCardRepository.findByUserIdOrderByBadgeTimestampDesc(userId);
 
         // Badges depending on score
-        checkAndGiveBadgeBasedOnScore(badgeCardList, BRONZE_MULTIPLICATOR, totalScore, 100, userId)
+        checkAndGiveBadgeBasedOnScore(badgeCardList, Badge.BRONZE_MULTIPLICATOR, totalScore, 100, userId)
                 .ifPresent(badgeCards::add);
 
-        checkAndGiveBadgeBasedOnScore(badgeCardList, SILVER_MULTIPLICATOR, totalScore, 500, userId)
+        checkAndGiveBadgeBasedOnScore(badgeCardList, Badge.SILVER_MULTIPLICATOR, totalScore, 500, userId)
                 .ifPresent(badgeCards::add);
 
-        checkAndGiveBadgeBasedOnScore(badgeCardList, GOLD_MULTIPLICATOR, totalScore, 999, userId)
+        checkAndGiveBadgeBasedOnScore(badgeCardList, Badge.GOLD_MULTIPLICATOR, totalScore, 999, userId)
                 .ifPresent(badgeCards::add);
+
+        MultiplicationResultAttempt attempt = attemptClient.retrieveMultiplicationResultAttemptbyId(attemptId);
+
+        if (!containsBadge(badgeCardList, Badge.LUCKY_NUMBER)
+                && (LUCKY_NUMBER == attempt.getMultiplicationFactorA()
+                || LUCKY_NUMBER == attempt.getMultiplicationFactorB())) {
+            BadgeCard luckyNumberBadge = giveBadgeToUser(Badge.LUCKY_NUMBER, userId);
+            badgeCards.add(luckyNumberBadge);
+        }
 
         // first badge won
         if (scoreCardList.size() == 1 && !containsBadge(badgeCardList, FIRST_WIN)) {

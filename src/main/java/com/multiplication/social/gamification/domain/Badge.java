@@ -9,5 +9,8 @@ public enum Badge {
 
     // other conditions applied
     FIRST_ATTEMPT,
-    FIRST_WIN
+    FIRST_WIN,
+
+    // when factor is 42
+    LUCKY_NUMBER
 }
