@@ -23,13 +23,13 @@ import static java.util.stream.Collectors.toList;
 
 @Service
 @Slf4j
-public class GameServiceImpl implements GameService {
+class GameServiceImpl implements GameService {
 
     private ScoreCardRepository scoreCardRepository;
     private BadgeCardRepository badgeCardRepository;
 
     @Autowired
-    public GameServiceImpl(ScoreCardRepository scoreCardRepository, BadgeCardRepository badgeCardRepository) {
+    public GameServiceImpl(final ScoreCardRepository scoreCardRepository, final BadgeCardRepository badgeCardRepository) {
         this.scoreCardRepository = scoreCardRepository;
         this.badgeCardRepository = badgeCardRepository;
     }
