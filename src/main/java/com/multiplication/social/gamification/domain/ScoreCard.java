@@ -12,8 +12,7 @@ import javax.persistence.Id;
 
 /**
  * This class represents the Score linked to an attempt in the game,
- * with an assoicated user and the timestamp in which the score
- * is registered.
+ * with an associated user and the timestamp in which the score is registered.
  */
 @RequiredArgsConstructor
 @Getter

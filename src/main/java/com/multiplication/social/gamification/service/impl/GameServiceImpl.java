@@ -42,7 +42,7 @@ public class GameServiceImpl implements GameService {
 
             log.info("User with id {} scored {} points for attempt id {}", userId, scoreCard.getScore(), attemptId);
 
-            List<BadgeCard> badgeCards = processForBadges(userId, attemptId);
+            List<BadgeCard> badgeCards = processForBadges(userId);
 
             return new GameStats(userId, scoreCard.getScore(), badgeCards.stream().map(BadgeCard::getBadge).collect(toList()));
         }
@@ -50,12 +50,6 @@ public class GameServiceImpl implements GameService {
         return GameStats.emptyStats(userId);
     }
 
-    /**
-     * Gets the stats for a user
-     *
-     * @param userId the user to get stats for
-     * @return the game stats
-     */
     @Override
     public GameStats retrieveStatsForUser(Long userId) {
         int score = scoreCardRepository.getTotalScoreForUser(userId);
@@ -66,12 +60,8 @@ public class GameServiceImpl implements GameService {
 
     /**
      * Checks the total score and the different score cards obtained to give new badges in case their conditions are met.
-     *
-     * @param userId
-     * @param attemptId
-     * @return≤
      */
-    private List<BadgeCard> processForBadges(final Long userId, final Long attemptId) {
+    private List<BadgeCard> processForBadges(final Long userId) {
         List<BadgeCard> badgeCards = new ArrayList<>();
 
         int totalScore = scoreCardRepository.getTotalScoreForUser(userId);
