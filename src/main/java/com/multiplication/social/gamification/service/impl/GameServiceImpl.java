@@ -39,8 +39,11 @@ public class GameServiceImpl implements GameService {
         if (correct) {
             ScoreCard scoreCard = new ScoreCard(userId, attemptId);
             scoreCardRepository.save(scoreCard);
+
             log.info("User with id {} scored {} points for attempt id {}", userId, scoreCard.getScore(), attemptId);
+
             List<BadgeCard> badgeCards = processForBadges(userId, attemptId);
+
             return new GameStats(userId, scoreCard.getScore(), badgeCards.stream().map(BadgeCard::getBadge).collect(toList()));
         }
 
@@ -57,6 +60,7 @@ public class GameServiceImpl implements GameService {
     public GameStats retrieveStatsForUser(Long userId) {
         int score = scoreCardRepository.getTotalScoreForUser(userId);
         List<BadgeCard> badgeCards = badgeCardRepository.findByUserIdOrderByBadgeTimestampDesc(userId);
+
         return new GameStats(userId, score, badgeCards.stream().map(BadgeCard::getBadge).collect(toList()));
     }
 
@@ -71,6 +75,7 @@ public class GameServiceImpl implements GameService {
         List<BadgeCard> badgeCards = new ArrayList<>();
 
         int totalScore = scoreCardRepository.getTotalScoreForUser(userId);
+
         log.info("New score for user {} is {}", userId, totalScore);
 
         List<ScoreCard> scoreCardList = scoreCardRepository.findByUserIdOrderByScoreTimestampDesc(userId);
@@ -115,7 +120,9 @@ public class GameServiceImpl implements GameService {
     private BadgeCard giveBadgeToUser(final Badge badge, final Long userId) {
         BadgeCard badgeCard = new BadgeCard(userId, badge);
         badgeCardRepository.save(badgeCard);
+
         log.info("User with id {} won a new badge: {}", userId, badge);
+
         return badgeCard;
     }
 }
